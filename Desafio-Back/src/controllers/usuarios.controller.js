@@ -1,20 +1,17 @@
 import { query } from "mssql";
 import { getConnection, sql } from "../database";
-import bcrypt from "bcrypt"; // Importa bcrypt
+import bcrypt from "bcrypt"; 
 
-// Registrar usuario
 export const registerUser = async (req, res) => {
   try {
     const { nombre, apel, dni, email, password } = req.body;
 
-    // Validación básica
     if (!nombre || !apel || !dni || !email || !password) {
       return res.status(400).json({ msg: "Faltan campos por completar" });
     }
 
     const pool = await getConnection();
 
-    // Verificar si el usuario ya existe
     const dniResult = await pool
       .request()
       .input("dni", sql.VarChar, dni)
@@ -37,22 +34,20 @@ export const registerUser = async (req, res) => {
         .json({ msg: "El usuario con este email ya está registrado" });
     }
 
-    const saltRounds = 10; // Número de rondas de salt, puedes ajustar según sea necesario
+    const saltRounds = 10; 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Registrar el nuevo usuario
     await pool
       .request()
       .input("nombre", sql.VarChar(50), nombre)
       .input("apel", sql.VarChar(50), apel)
       .input("dni", sql.NChar(8), dni)
       .input("email", sql.VarChar(50), email)
-      .input("password", sql.VarChar(255), hashedPassword) // Asegúrate de hashear la contraseña
+      .input("password", sql.VarChar(255), hashedPassword) 
       .query(
         "INSERT INTO usuarios (nombre, apel, dni, email, password) VALUES (@nombre, @apel, @dni, @email, @password)"
       );
 
-    // Respuesta exitosa
     return res.status(201).json({ msg: "Usuario registrado correctamente" });
   } catch (error) {
     console.error("Error al registrar usuario:", error);
@@ -62,7 +57,6 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// Iniciar sesión
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -73,7 +67,6 @@ export const loginUser = async (req, res) => {
 
     const pool = await getConnection();
 
-    // Buscar usuario por email
     const result = await pool
       .request()
       .input("email", sql.VarChar(50), email)

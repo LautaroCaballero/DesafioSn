@@ -1,10 +1,9 @@
 import { query } from "mssql";
 import { getConnection, sql, querys } from "../database";
-import multer from 'multer';
-import ftpClient from '../ftpclient';
-import path from 'path';
-import fs from 'fs';
-import { uploadFile } from '../ftpclient';
+import multer from "multer";
+// import path from 'path';
+import fs from "fs";
+// import { uploadFile } from '../ftpclient';
 
 // const storage = multer.diskStorage({
 //   destination: (req, file, cb) => {
@@ -25,15 +24,12 @@ export const getDenuncias = async (req, res) => {
   try {
     const pool = await getConnection();
 
-    // Consultar todas las denuncias
     const result = await pool.request().query(querys.getAllDenuncias);
 
-    // Verificar si hay denuncias
     if (result.recordset.length === 0) {
       return res.status(404).json({ msg: "No se encontraron denuncias" });
     }
 
-    // Devolver todas las denuncias
     res.json(result.recordset);
   } catch (error) {
     console.error("Error al obtener denuncias:", error.message || error);
@@ -48,26 +44,21 @@ export const getDenunciaByDNI = async (req, res) => {
   try {
     const { dni } = req.params;
 
-    // Verificar si el DNI fue proporcionado
     if (!dni) {
       return res.status(400).json({ msg: "Bad request. Please provide a DNI" });
     }
 
-    // Conectar a la base de datos
     const pool = await getConnection();
 
-    // Consultar la denuncia por DNI
     const result = await pool
       .request()
-      .input("dni", sql.VarChar, dni) // DNI es generalmente un string
+      .input("dni", sql.VarChar, dni)
       .query(querys.getDenunciaByDNI);
 
-    // Verificar si se encontró la denuncia
     if (result.recordset.length === 0) {
       return res.status(404).json({ msg: "Denuncia not found" });
     }
 
-    // Devolver la denuncia encontrada
     res.json(result.recordset);
   } catch (error) {
     console.error("Error:", error.message || error);
@@ -79,7 +70,17 @@ export const getDenunciaByDNI = async (req, res) => {
 
 export const postDenuncia = async (req, res) => {
   try {
-    const { nombre, apel, dni, cel, dom, descripcion, estado = 'ABIERTO', factura, otraDocumentacion } = req.body;
+    const {
+      nombre,
+      apel,
+      dni,
+      cel,
+      dom,
+      descripcion,
+      estado = "ABIERTO",
+      factura,
+      otraDocumentacion,
+    } = req.body;
 
     const errors = {};
     if (!nombre) errors.nombre = "El nombre es requerido.";
@@ -90,7 +91,9 @@ export const postDenuncia = async (req, res) => {
     if (!descripcion) errors.descripcion = "La descripción es requerida.";
 
     if (Object.keys(errors).length > 0) {
-      return res.status(400).json({ msg: "Faltan campos por completar", errors });
+      return res
+        .status(400)
+        .json({ msg: "Faltan campos por completar", errors });
     }
 
     let ticket_url = factura || null;
@@ -114,10 +117,11 @@ export const postDenuncia = async (req, res) => {
     res.json({ msg: "Denuncia creada correctamente" });
   } catch (error) {
     console.error("Error:", error.message || error);
-    return res.status(500).json({ msg: "Internal Server Error", error: error.message });
+    return res
+      .status(500)
+      .json({ msg: "Internal Server Error", error: error.message });
   }
 };
-
 
 export const deleteDenuncia = async (req, res) => {
   try {
@@ -131,7 +135,7 @@ export const deleteDenuncia = async (req, res) => {
 
     const result = await pool
       .request()
-      .input("id", sql.Int, id) // Id es un entero
+      .input("id", sql.Int, id)
       .query("DELETE FROM denuncias WHERE Id = @id");
 
     if (result.rowsAffected[0] === 0) {
@@ -152,7 +156,6 @@ export const updateDenuncia = async (req, res) => {
     const { id } = req.params;
     const { estado } = req.body;
 
-    // Verificar si el ID y el estado están presentes
     if (!id || !estado) {
       return res.status(400).json({ msg: "Bad request. Missing fields" });
     }
@@ -160,9 +163,8 @@ export const updateDenuncia = async (req, res) => {
     const pool = await getConnection();
     const result = await pool
       .request()
-      .input("id", sql.Int, id) // Asegurarse de que el id sea de tipo entero
-      .input("estado", sql.VarChar(50), estado) // Actualizar solo el estado
-      .query(`
+      .input("id", sql.Int, id)
+      .input("estado", sql.VarChar(50), estado).query(`
         UPDATE denuncias
         SET estado = @estado
         WHERE id = @id
