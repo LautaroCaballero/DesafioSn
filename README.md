@@ -1,7 +1,5 @@
 # DesafioSn
 
-# Mi Aplicación Web
-
 ## Descripción
 
 Este proyecto es una aplicación web para presentar y rastrear denuncias. Incluye un frontend construido con React y un backend usando Node.js con Express y SQL.
